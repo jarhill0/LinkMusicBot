@@ -16,8 +16,8 @@ class Album:
 
     def __init__(self, title, artist):
         """Initialize the album."""
-        self.title = title
-        self.artist = artist
+        self.title = str(title)
+        self.artist = str(artist)
 
     def __repr__(self):
         return 'Album({!r}, {!r})'.format(self.title, self.artist)
@@ -31,9 +31,9 @@ class Song:
 
     def __init__(self, title, artist, album):
         """Initialize the song."""
-        self.title = title
-        self.artist = artist
-        self.album = album
+        self.title = str(title)
+        self.artist = str(artist)
+        self.album = str(album)
 
     def __repr__(self):
         return 'Song({!r}, {!r}, {!r})'.format(self.title, self.artist, self.album)
