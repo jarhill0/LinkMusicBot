@@ -15,7 +15,7 @@ cp config.py.example config.py
 vim config.py
 ```
 
-Enter your credentials for the Spotify and Telegram APIs into
+Enter your credentials for the Spotify, Telegram, and YouTube APIs into
 `config.py`.
 
 ## Usage
