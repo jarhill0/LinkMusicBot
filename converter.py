@@ -209,3 +209,126 @@ class Spotify(ServiceHandler):
             if search['tracks']['total'] < 1:
                 raise ValueError("Couldn't find any song results for {!r}.".format(song))
         return search['tracks']['items'][0]['external_urls']['spotify']
+
+
+class YouTube(ServiceHandler):
+    _PLAYLIST_PATH = 'https://www.googleapis.com/youtube/v3/playlists'
+    _SEARCH_PATH = 'https://www.googleapis.com/youtube/v3/search'
+
+    @staticmethod
+    def _format_album_query(item):
+        """Format a query for an Album."""
+        return '{} {} full album'.format(item.title, item.artist)
+
+    @staticmethod
+    def _format_song_query(item):
+        """Format a query for a Song."""
+        return '{} {} topic'.format(item.title, item.artist)
+
+    @staticmethod
+    def _link_to_id(link):
+        """Take a YouTube link and return a playlist ID."""
+        return parse_qs(urlparse(link).query)['list'][0]
+
+    @staticmethod
+    def _playlist_link(playlist_data):
+        """Get a playlist link from a data payload."""
+        return 'https://www.youtube.com/playlist?list={}'.format(playlist_data['id']['playlistId'])
+
+    @staticmethod
+    def _video_link(video_data):
+        """Get a video link from a data payload"""
+        return 'https://youtube.com/watch?v={}'.format(video_data['id']['videoId'])
+
+    @staticmethod
+    def service_name():
+        """Return the name of YouTube."""
+        return 'YouTube'
+
+    def __init__(self):
+        """Initialize the class."""
+        self._yt_token = secrets.get('youtube_token')
+
+    def _get(self, url, params=None):
+        """Get a URL with certain parameters."""
+        if params is None:
+            params = {}
+
+        key_set = False
+        if 'key' not in params:
+            params['key'] = self._yt_token
+            key_set = True
+        response = requests.get(url, params=params).json()
+        if key_set:
+            del params['key']
+        return response
+
+    def album_to_link(self, album):
+        """Turn an Album into a YouTube link."""
+        params = {'part': 'snippet',
+                  'maxResults': 1,
+                  'q': self._format_album_query(album),
+                  'type': 'playlist'}
+        response = self._get(self._SEARCH_PATH, params)
+
+        if len(response['items']) < 1:
+            raise ValueError("Couldn't find any album results for {!r}.".format(album))
+        return self._playlist_link(response['items'][0])
+
+    def can_handle_link(self, link):
+        """Return True if and only if this is a YouTube link."""
+        return urlparse(link).netloc.lower() in ('youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be')
+
+    def link_is_song(self, link):
+        """Return True if a link is a song, and False if it's an album."""
+        parsed_url = urlparse(link)
+        if parsed_url.netloc.lower() in ('youtube.com', 'www.youtube.com', 'm.youtube.com'):
+            return parsed_url.path == '/watch'
+        return True  # youtu.be link
+
+    def link_to_album(self, link):
+        """Turn a YouTube link into an Album.
+
+        Warning: This is super shaky, because it just takes a playlist and converts it. There will be plenty of
+        unexpected behavior!
+        """
+        params = {'part': 'snippet',
+                  'id': self._link_to_id(link)}
+        response = self._get(self._PLAYLIST_PATH, params)
+        if len(response['items']) < 1:
+            raise ValueError('Not an album: {!r}'.format(link))
+
+        return Album(response['items'][0]['snippet']['title'], '')  # empty artist because we really can't know
+
+    def link_to_song(self, link):
+        """Turn a YouTube link into a Song."""
+        # Unfortunately, this info is NOT provided by the API, so... we're doing more webscraping!
+        page = BeautifulSoup(requests.get(link).text, 'html.parser')
+        title = artist = album = None
+        for metadata in page.find_all('li', class_='watch-meta-item'):
+            metadata_name = metadata.h4.string.strip()
+            metadata_value = metadata.ul.li.string.strip()
+
+            if metadata_name == 'Song':
+                title = metadata_value
+            elif metadata_name == 'Artist':
+                artist = metadata_value
+            elif metadata_name == 'Album':
+                album = metadata_value
+
+        if None in (title, artist, album):
+            raise ValueError('Not a song: {!r}'.format(link))
+
+        return Song(title, artist, album)
+
+    def song_to_link(self, song):
+        """Turn a Song into a YouTube link."""
+        params = {'part': 'snippet',
+                  'maxResults': 1,
+                  'q': self._format_song_query(song),
+                  'type': 'video'}
+        response = self._get(self._SEARCH_PATH, params)
+
+        if len(response['items']) < 1:
+            raise ValueError("Couldn't find any song results for {!r}.".format(song))
+        return self._video_link(response['items'][0])
