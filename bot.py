@@ -2,13 +2,13 @@ from pawt import BotCommand, InlineKeyboardMarkupBuilder, inline_queries, input_
 from pawt.bots import TelegramBotInterface
 
 from config import secrets
-from converter import AppleMusic, Spotify
+from converter import AppleMusic, Spotify, YouTube
 
 
 class LinkMusicBot(TelegramBotInterface):
     def __init__(self, token, *, url=None, session=None):
         super().__init__(token, url=url, session=session)
-        self._music_services = [Spotify(), AppleMusic()]
+        self._music_services = [AppleMusic(), YouTube(), Spotify()]
 
     # noinspection PyBroadException
     def handle_link(self, link):

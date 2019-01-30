@@ -4,4 +4,5 @@ secrets = {
     'spotify_client_id': '',
     'spotify_client_secret': '',
     'telegram_token': '',
+    'youtube_token': '',
 }
