@@ -124,17 +124,17 @@ class AppleMusic(ServiceHandler):
         page = BeautifulSoup(requests.get(link).text, 'html.parser')
 
         album_schema = page.find('script', type='application/ld+json')
-        page_info = loads(album_schema.contents[0])
+        page_info = loads(album_schema.string)
         return Album(unescape(page_info['name']), unescape(page_info['byArtist']['name']))
 
     def link_to_song(self, link):
         """Turn an Apple Music link into a Song."""
         page = BeautifulSoup(requests.get(link).text, 'html.parser')
 
-        track_name = page.find(class_='is-deep-linked').find(class_='table__row__headline').text.strip()
+        track_name = page.find(class_='is-deep-linked').find(class_='table__row__headline').string.strip()
 
         album_schema = page.find('script', type='application/ld+json')
-        page_info = loads(album_schema.contents[0])
+        page_info = loads(album_schema.string)
         return Song(unescape(track_name), unescape(page_info['byArtist']['name']), unescape(page_info['name']))
 
     def song_to_link(self, song):
