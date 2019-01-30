@@ -316,7 +316,7 @@ class YouTube(ServiceHandler):
             elif metadata_name == 'Album':
                 album = metadata_value
 
-        if None in (title, artist, album):
+        if None in (title, artist):
             raise ValueError('Not a song: {!r}'.format(link))
 
         return Song(title, artist, album)
