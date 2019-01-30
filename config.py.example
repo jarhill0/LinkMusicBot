@@ -1,0 +1,7 @@
+# Rename to config.py and fill in.
+
+secrets = {
+    'spotify_client_id': '',
+    'spotify_client_secret': '',
+    'telegram_token': '635278312:AAEBNw4b_c_PI5DCpIhfUWip0_U9bvsiEb4',
+}
