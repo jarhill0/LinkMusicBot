@@ -18,6 +18,7 @@ class Album:
         """Initialize the album."""
         self.title = str(title)
         self.artist = str(artist)
+        self.cover_art = None
 
     def __repr__(self):
         return 'Album({!r}, {!r})'.format(self.title, self.artist)
@@ -34,6 +35,7 @@ class Song:
         self.title = str(title)
         self.artist = str(artist)
         self.album = str(album)
+        self.cover_art = None
 
     def __repr__(self):
         return 'Song({!r}, {!r}, {!r})'.format(self.title, self.artist, self.album)
@@ -175,12 +177,17 @@ class Spotify(ServiceHandler):
                               item.artist)
 
     def album_to_link(self, album):
-        """Convert an Album into a Spotify link."""
+        """Convert an Album into a Spotify link.
+
+        Also sets the album cover art, if un-set.
+        """
         search = self._spotify.search(self._format_query(album), type='album')
         if search['albums']['total'] < 1:
             search = self._spotify.search(self._naive_query(album), type='album')
             if search['albums']['total'] < 1:
                 raise ValueError("Couldn't find any album results for {!r}.".format(album))
+        if album.cover_art is None:
+            album.cover_art = search['albums']['items'][0]['images'][0]
         return search['albums']['items'][0]['external_urls']['spotify']
 
     def can_handle_link(self, link):
@@ -202,12 +209,17 @@ class Spotify(ServiceHandler):
         return Song(song['name'], song['artists'][0]['name'], song['album']['name'])
 
     def song_to_link(self, song):
-        """Convert a Song into a Spotify link."""
+        """Convert a Song into a Spotify link.
+
+        Also sets the song cover art, if un-set.
+        """
         search = self._spotify.search(self._format_query(song))
         if search['tracks']['total'] < 1:
             search = self._spotify.search(self._naive_query(song))
             if search['tracks']['total'] < 1:
                 raise ValueError("Couldn't find any song results for {!r}.".format(song))
+        if song.cover_art is None:
+            song.cover_art = search['tracks']['items'][0]['album']['images'][0]
         return search['tracks']['items'][0]['external_urls']['spotify']
 
 

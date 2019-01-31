@@ -12,7 +12,7 @@ class LinkMusicBot(TelegramBotInterface):
 
     # noinspection PyBroadException
     def handle_link(self, link):
-        """Returns an InlineQueryResultArticle if the link is valid, otherwise None."""
+        """Returns an InlineQueryResult if the link is valid, otherwise None."""
         known_service = None
         for service in self._music_services:
             if service.can_handle_link(link):
@@ -53,9 +53,16 @@ class LinkMusicBot(TelegramBotInterface):
                 else:
                     builder.new_row()
 
-        return inline_queries.InlineQueryResultArticle(str(item)[:64], str(item),
-                                                       input_message_content.InputTextMessageContent(str(item)),
-                                                       reply_markup=builder.build())
+        result_id = str(item)[:64]
+        if item.cover_art is not None:
+            # rich result with picture
+            return inline_queries.InlineQueryResultPhoto(result_id, item.cover_art['url'], item.cover_art['url'],
+                                                         item.cover_art['width'], item.cover_art['height'], str(item),
+                                                         caption=str(item), reply_markup=builder.build())
+        else:  # fallback for no art
+            return inline_queries.InlineQueryResultArticle(result_id, str(item),
+                                                           input_message_content.InputTextMessageContent(str(item)),
+                                                           reply_markup=builder.build())
 
     def inline_query_handler(self, inline_query):
         response = self.handle_link(inline_query.query)
