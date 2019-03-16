@@ -24,7 +24,7 @@ class LinkMusicBot(TelegramBotInterface):
 
     @staticmethod
     def get_id():
-        return random.sample(printable, 32)
+        return ''.join(random.sample(printable, 32))
 
     # noinspection PyBroadException
     def make_iqr(self, item):
