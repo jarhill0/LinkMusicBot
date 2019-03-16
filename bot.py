@@ -1,4 +1,6 @@
+import random
 import traceback
+from string import printable
 
 from pawt import BotCommand, InlineKeyboardMarkupBuilder, inline_queries, input_message_content
 from pawt.bots import TelegramBotInterface
@@ -20,6 +22,10 @@ class LinkMusicBot(TelegramBotInterface):
         else:
             self.search_service = None
 
+    @staticmethod
+    def get_id():
+        return random.sample(printable, 32)
+
     # noinspection PyBroadException
     def make_iqr(self, item):
         """Returns an InlineQueryResult from the given object."""
@@ -33,7 +39,7 @@ class LinkMusicBot(TelegramBotInterface):
             else:
                 builder.new_row()
 
-        result_id = str(item)[:64]
+        result_id = self.get_id()
         if item.cover_art is not None:
             # rich result with picture
             return inline_queries.InlineQueryResultPhoto(result_id, item.cover_art['url'], item.cover_art['url'],
