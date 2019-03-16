@@ -68,6 +68,10 @@ class ServiceHandler:
         """Take a link and return an Album."""
         raise NotImplementedError()
 
+    def link_to_object(self, link):
+        """Take a link and return an Album or a Song."""
+        return self.link_to_song(link) if self.link_is_song(link) else self.link_to_album(link)
+
     def link_to_song(self, link):
         """Take a link and return a Song."""
         raise NotImplementedError()
@@ -75,6 +79,10 @@ class ServiceHandler:
     def song_to_link(self, song):
         """Take a Song and return a link."""
         raise NotImplementedError()
+
+    def object_to_link(self, obj):
+        """Take a Song or Album and return a link."""
+        return self.song_to_link(obj) if isinstance(obj, Song) else self.album_to_link(obj)
 
 
 class AppleMusic(ServiceHandler):
@@ -138,6 +146,23 @@ class AppleMusic(ServiceHandler):
         album_schema = page.find('script', type='application/ld+json')
         page_info = loads(album_schema.string)
         return Song(unescape(track_name), unescape(page_info['byArtist']['name']), unescape(page_info['name']))
+
+    def search(self, query, n=5):
+        """Perform a search with a given query. Returns a list of Song or Album objects."""
+        search = self._search(query, media='music', entity='song,album', explicit=True, limit=n)
+        for item in search['results']:
+            wrapper_type = item.get('wrapperType')
+            if wrapper_type == 'track':
+                yield Song(
+                    item['trackName'],
+                    item['artistName'],
+                    item['collectionName']
+                )
+            elif wrapper_type == 'collection':
+                yield Album(
+                    item['collectionName'],
+                    item['artistName']
+                )
 
     def song_to_link(self, song):
         """Turn a Song into an Apple Music link."""

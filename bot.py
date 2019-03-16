@@ -1,5 +1,8 @@
+import traceback
+
 from pawt import BotCommand, InlineKeyboardMarkupBuilder, inline_queries, input_message_content
 from pawt.bots import TelegramBotInterface
+from pawt.exceptions import APIException
 
 from config import secrets
 from converter import AppleMusic, Spotify, YouTube
@@ -10,48 +13,25 @@ class LinkMusicBot(TelegramBotInterface):
         super().__init__(token, url=url, session=session)
         self._music_services = [AppleMusic(), YouTube(), Spotify()]
 
-    # noinspection PyBroadException
-    def handle_link(self, link):
-        """Returns an InlineQueryResult if the link is valid, otherwise None."""
-        known_service = None
         for service in self._music_services:
-            if service.can_handle_link(link):
-                known_service = service
+            if hasattr(service, 'search'):
+                self.search_service = service
                 break
-        if known_service is None:
-            return None
-
-        builder = InlineKeyboardMarkupBuilder()
-        if known_service.link_is_song(link):
-            try:
-                song = known_service.link_to_song(link)
-            except Exception:
-                return None
-
-            item = song
-
-            for service in self._music_services:
-                try:
-                    builder.add_button(service.service_name(), url=service.song_to_link(song))
-                except Exception:
-                    pass
-                else:
-                    builder.new_row()
         else:
+            self.search_service = None
+
+    # noinspection PyBroadException
+    def make_iqr(self, item):
+        """Returns an InlineQueryResult from the given object."""
+        builder = InlineKeyboardMarkupBuilder()
+
+        for service in self._music_services:
             try:
-                album = known_service.link_to_album(link)
+                builder.add_button(service.service_name(), url=service.object_to_link(item))
             except Exception:
-                return None
-
-            item = album
-
-            for service in self._music_services:
-                try:
-                    builder.add_button(service.service_name(), url=service.album_to_link(album))
-                except Exception:
-                    pass
-                else:
-                    builder.new_row()
+                pass
+            else:
+                builder.new_row()
 
         result_id = str(item)[:64]
         if item.cover_art is not None:
@@ -64,9 +44,36 @@ class LinkMusicBot(TelegramBotInterface):
                                                            input_message_content.InputTextMessageContent(str(item)),
                                                            reply_markup=builder.build())
 
+    # noinspection PyBroadException
+    def handle_link(self, link):
+        """Returns an InlineQueryResult if the link is valid, otherwise None."""
+        for service in self._music_services:
+            if service.can_handle_link(link):
+                try:
+                    item = service.link_to_object(link)
+                except Exception:
+                    return None
+                break
+        else:
+            return None
+
+        return self.make_iqr(item)
+
+    def handle_search(self, query):
+        if self.search_service is None:
+            return []
+        return [self.make_iqr(item) for item in self.search_service.search(query)]
+
     def inline_query_handler(self, inline_query):
-        response = self.handle_link(inline_query.query)
-        inline_query.answer([response] if response is not None else [])
+        try:
+            response = self.handle_link(inline_query.query)
+            if response is not None:
+                response = [response]
+            else:
+                response = self.handle_search(inline_query.query)  # will be empty list if no results
+            inline_query.answer(response)
+        except APIException:
+            traceback.print_exc()
 
     def message_handler(self, message):
         for entity in message.get_any_entities():
