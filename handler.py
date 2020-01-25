@@ -1,6 +1,7 @@
+from json import dumps
 import random
-import traceback
 from string import printable
+import traceback
 
 from pawt import (
     BotCommand,
@@ -83,13 +84,13 @@ def handle_link(link):
     else:
         return None
 
-    return make_iqr(item).to_dict()
+    return make_iqr(item)
 
 
 def handle_search(query):
     if SEARCH_SERVICE is None:
         return []
-    return [make_iqr(item).to_dict() for item in SEARCH_SERVICE.search(query)]
+    return [make_iqr(item) for item in SEARCH_SERVICE.search(query)]
 
 
 def inline_query_handler(inline_query):
@@ -101,7 +102,9 @@ def inline_query_handler(inline_query):
             response = handle_search(
                 inline_query.query
             )  # will be empty list if no results
-        return response
+        return {'method': 'answerInlineQuery',
+                'inline_query_id': inline_query.id,
+                'results': dumps([result.to_dict() for result in response])}
     except APIException:
         traceback.print_exc()
 
@@ -110,11 +113,11 @@ def message_handler(message):
     for entity in message.get_any_entities():
         if isinstance(entity, BotCommand):
             if entity.command.lower() == "/start":
-                return (
+                return {'method': 'sendMessage', 'chat_id': message.chat.id, 'text': (
                     "Hello! I'm designed to be used in inline mode. Type my name "
                     "followed by the link to a song on your favorite music service! "
                     "I work in all chats."
-                )
+                )}
 
 
 KINDS = {"inline_query": inline_query_handler, "message": message_handler}
