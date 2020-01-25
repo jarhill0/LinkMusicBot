@@ -16,15 +16,6 @@ TELEGRAM = Telegram(TOKEN)
 app = Flask(__name__)
 
 
-def log(thing):
-    try:
-        with open("/home/joe/LinkMusicBot/messages.log", "a") as f:
-            f.write(thing)
-            f.write("\n")
-    except IOError:
-        pass
-
-
 @app.before_first_request
 def set_up():
     set_webhooks()
