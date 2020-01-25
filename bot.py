@@ -2,7 +2,12 @@ import random
 import traceback
 from string import printable
 
-from pawt import BotCommand, InlineKeyboardMarkupBuilder, inline_queries, input_message_content
+from pawt import (
+    BotCommand,
+    InlineKeyboardMarkupBuilder,
+    inline_queries,
+    input_message_content,
+)
 from pawt.bots import TelegramBotInterface
 from pawt.exceptions import APIException
 
@@ -16,7 +21,7 @@ class LinkMusicBot(TelegramBotInterface):
         self._music_services = [AppleMusic(), YouTube(), Spotify()]
 
         for service in self._music_services:
-            if hasattr(service, 'search'):
+            if hasattr(service, "search"):
                 self.search_service = service
                 break
         else:
@@ -24,7 +29,7 @@ class LinkMusicBot(TelegramBotInterface):
 
     @staticmethod
     def get_id():
-        return ''.join(random.sample(printable, 32))
+        return "".join(random.sample(printable, 32))
 
     # noinspection PyBroadException
     def make_iqr(self, item):
@@ -33,7 +38,9 @@ class LinkMusicBot(TelegramBotInterface):
 
         for service in self._music_services:
             try:
-                builder.add_button(service.service_name(), url=service.object_to_link(item))
+                builder.add_button(
+                    service.service_name(), url=service.object_to_link(item)
+                )
             except Exception:
                 pass
             else:
@@ -42,13 +49,23 @@ class LinkMusicBot(TelegramBotInterface):
         result_id = self.get_id()
         if item.cover_art is not None:
             # rich result with picture
-            return inline_queries.InlineQueryResultPhoto(result_id, item.cover_art['url'], item.cover_art['url'],
-                                                         item.cover_art['width'], item.cover_art['height'], str(item),
-                                                         caption=str(item), reply_markup=builder.build())
+            return inline_queries.InlineQueryResultPhoto(
+                result_id,
+                item.cover_art["url"],
+                item.cover_art["url"],
+                item.cover_art["width"],
+                item.cover_art["height"],
+                str(item),
+                caption=str(item),
+                reply_markup=builder.build(),
+            )
         else:  # fallback for no art
-            return inline_queries.InlineQueryResultArticle(result_id, str(item),
-                                                           input_message_content.InputTextMessageContent(str(item)),
-                                                           reply_markup=builder.build())
+            return inline_queries.InlineQueryResultArticle(
+                result_id,
+                str(item),
+                input_message_content.InputTextMessageContent(str(item)),
+                reply_markup=builder.build(),
+            )
 
     # noinspection PyBroadException
     def handle_link(self, link):
@@ -76,7 +93,9 @@ class LinkMusicBot(TelegramBotInterface):
             if response is not None:
                 response = [response]
             else:
-                response = self.handle_search(inline_query.query)  # will be empty list if no results
+                response = self.handle_search(
+                    inline_query.query
+                )  # will be empty list if no results
             inline_query.answer(response)
         except APIException:
             traceback.print_exc()
@@ -84,12 +103,14 @@ class LinkMusicBot(TelegramBotInterface):
     def message_handler(self, message):
         for entity in message.get_any_entities():
             if isinstance(entity, BotCommand):
-                if entity.command.lower() == '/start':
-                    message.chat.send_message("Hello! I'm designed to be used in inline mode. Type my name "
-                                              'followed by the link to a song on your favorite music service! '
-                                              'I work in all chats.')
+                if entity.command.lower() == "/start":
+                    message.chat.send_message(
+                        "Hello! I'm designed to be used in inline mode. Type my name "
+                        "followed by the link to a song on your favorite music service! "
+                        "I work in all chats."
+                    )
                 break
 
 
-if __name__ == '__main__':
-    LinkMusicBot(secrets['telegram_token']).run()
+if __name__ == "__main__":
+    LinkMusicBot(secrets["telegram_token"]).run()
