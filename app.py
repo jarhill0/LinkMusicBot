@@ -10,7 +10,7 @@ from config import secrets
 from handler import handle_update
 
 TOKEN = secrets["telegram_token"]
-PATH = secrets.get("webhook_path", "").lstrip('/')
+PATH = secrets.get("webhook_path", "").lstrip("/")
 TELEGRAM = Telegram(TOKEN)
 
 app = Flask(__name__)
@@ -18,17 +18,16 @@ app = Flask(__name__)
 
 def log(thing):
     try:
-        with open('/home/joe/LinkMusicBot/messages.log', 'a') as f:
+        with open("/home/joe/LinkMusicBot/messages.log", "a") as f:
             f.write(thing)
-            f.write('\n')
+            f.write("\n")
     except IOError:
         pass
 
 
 @app.before_first_request
 def set_up():
-    print(request.url_root)
-    # set_webhooks()
+    set_webhooks()
 
 
 def set_webhooks():
