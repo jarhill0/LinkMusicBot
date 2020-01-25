@@ -31,6 +31,7 @@ def handle():
     try:
         with open('/home/joe/LinkMusicBot/requests.log', 'a') as f:
             f.write(request.get_data(as_text=True))
+            f.write('\n')
     except IOError:
         pass
     return jsonify({'this is a dict': 23, 'with some stuff': [1, 2, 3, "seven", {1: 2, 3: 4, 5: [6, 7, 8]}]})
