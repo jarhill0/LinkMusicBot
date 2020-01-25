@@ -5,4 +5,5 @@ secrets = {
     "spotify_client_secret": "",
     "telegram_token": "",
     "youtube_token": "",
+    "webhook_path": "",
 }
