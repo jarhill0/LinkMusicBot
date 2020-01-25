@@ -4,20 +4,31 @@ from flask import (
     request,
 )
 from pawt import Telegram
+from pawt.models import Update
 from config import secrets
+
+from handler import handle_update
 
 TOKEN = secrets["telegram_token"]
 PATH = secrets.get("webhook_path", "").lstrip('/')
-
 TELEGRAM = Telegram(TOKEN)
 
 app = Flask(__name__)
 
 
+def log(thing):
+    try:
+        with open('/home/joe/LinkMusicBot/messages.log', 'a') as f:
+            f.write(thing)
+            f.write('\n')
+    except IOError:
+        pass
+
+
 @app.before_first_request
 def set_up():
     print(request.url_root)
-    set_webhooks()
+    # set_webhooks()
 
 
 def set_webhooks():
@@ -26,12 +37,8 @@ def set_webhooks():
     TELEGRAM.post(path="setWebhook", data={"url": full_path})
 
 
-@app.route("/" + PATH, methods=["GET", "POST"])
+@app.route("/" + PATH, methods=["POST"])
 def handle():
-    try:
-        with open('/home/joe/LinkMusicBot/requests.log', 'a') as f:
-            f.write(request.get_data(as_text=True))
-            f.write('\n')
-    except IOError:
-        pass
-    return jsonify({'this is a dict': 23, 'with some stuff': [1, 2, 3, "seven", {1: 2, 3: 4, 5: [6, 7, 8]}]})
+    update = Update(TELEGRAM, request.get_json())
+    response = handle_update(update)
+    return jsonify(response)
